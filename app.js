@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let currentProductForCustom = null;
     let selectedOptions = {};
+    let currentQty = 1;
 
     // Supabase 設定
     const SUPABASE_URL = 'https://xvieufpjzunqgntrmrtd.supabase.co';
@@ -29,6 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalOptions = document.getElementById('modal-options');
     const btnCancelCustom = document.getElementById('btn-cancel-custom');
     const btnConfirmCustom = document.getElementById('btn-confirm-custom');
+    
+    const btnQtyMinus = document.getElementById('btn-qty-minus');
+    const btnQtyPlus = document.getElementById('btn-qty-plus');
+    const modalQty = document.getElementById('modal-qty');
     
     const tableModal = document.getElementById('table-modal');
     const tableGrid = document.getElementById('table-grid');
@@ -136,19 +141,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 6. 處理商品點擊
+    // 6. 處理商品點擊 (現在所有商品點擊都會跳出彈窗)
     function handleProductClick(product) {
-        if (product.category === 'combo' || product.options) {
-            showCustomModal(product);
-        } else {
-            addToCart(product.name, product.price);
-        }
+        showCustomModal(product);
     }
 
     // 7. 顯示客製化彈窗
     function showCustomModal(product) {
         currentProductForCustom = product;
         selectedOptions = {};
+        currentQty = 1;
+        modalQty.textContent = currentQty;
         
         modalItemName.textContent = product.name;
         modalOptions.innerHTML = '';
@@ -241,7 +244,20 @@ document.addEventListener('DOMContentLoaded', () => {
         customModal.classList.add('visible');
     }
 
-    // 8. 彈窗按鈕事件
+    // 8. 數量按鈕事件
+    btnQtyMinus.addEventListener('click', () => {
+        if (currentQty > 1) {
+            currentQty--;
+            modalQty.textContent = currentQty;
+        }
+    });
+
+    btnQtyPlus.addEventListener('click', () => {
+        currentQty++;
+        modalQty.textContent = currentQty;
+    });
+
+    // 9. 彈窗按鈕事件
     btnCancelCustom.addEventListener('click', () => {
         customModal.classList.remove('visible');
     });
@@ -274,24 +290,31 @@ document.addEventListener('DOMContentLoaded', () => {
             finalName += ` (${optionsDetails.join(', ')})`;
         }
         
-        addToCart(finalName, finalPrice);
+        addToCart(finalName, finalPrice, currentQty);
         customModal.classList.remove('visible');
     });
 
-    // 9. 加入購物車
-    function addToCart(name, price) {
-        cart.push({ name, price });
+    // 10. 加入購物車 (支援數量)
+    function addToCart(name, price, quantity) {
+        const existingItem = cart.find(item => item.name === name);
+        if (existingItem) {
+            existingItem.quantity += quantity;
+        } else {
+            cart.push({ name, price, quantity });
+        }
         updateCart();
     }
 
     function updateCart() {
-        cartCount.textContent = cart.length;
-        const total = cart.reduce((sum, item) => sum + item.price, 0);
-        cartTotal.textContent = total;
-        modalCartTotal.textContent = total;
+        const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        
+        cartCount.textContent = totalCount;
+        cartTotal.textContent = totalPrice;
+        modalCartTotal.textContent = totalPrice;
     }
 
-    // 10. 購物車彈窗邏輯
+    // 11. 購物車彈窗邏輯
     cartBar.addEventListener('click', () => {
         if (cart.length === 0) {
             alert('購物車是空的，快去點餐吧！');
@@ -314,9 +337,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             itemDiv.innerHTML = `
                 <div class="cart-item-info">
-                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-name">${item.name} x ${item.quantity}</div>
                 </div>
-                <div class="cart-item-price">$${item.price}</div>
+                <div class="cart-item-price">$${item.price * item.quantity}</div>
                 <button class="btn-delete-item" data-index="${index}">×</button>
             `;
             
@@ -335,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 11. 送出訂單到 Supabase
+    // 12. 送出訂單到 Supabase
     btnSendOrder.addEventListener('click', async () => {
         if (cart.length === 0) return;
 
@@ -345,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const orderData = {
             order_type: orderType || 'take-out',
             table_number: tableNumber,
-            total_amount: cart.reduce((sum, item) => sum + item.price, 0),
+            total_amount: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
             status: 'pending'
         };
 
@@ -360,12 +383,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const orderId = data[0].id;
 
-            // 2. 插入訂單明細
-            const itemsData = cart.map(item => ({
-                order_id: orderId,
-                name: item.name,
-                price: item.price
-            }));
+            // 2. 插入訂單明細 (依數量展開插入，維持資料庫結構)
+            const itemsData = [];
+            cart.forEach(item => {
+                for (let i = 0; i < item.quantity; i++) {
+                    itemsData.push({
+                        order_id: orderId,
+                        name: item.name,
+                        price: item.price
+                    });
+                }
+            });
 
             const { error: itemsError } = await supabase
                 .from('order_items')
@@ -382,7 +410,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('送單失敗:', error);
-            // 顯示詳細錯誤訊息以便除錯
             alert('送單失敗: ' + (error.message || error));
         } finally {
             btnSendOrder.disabled = false;
