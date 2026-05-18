@@ -373,7 +373,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (itemsError) throw itemsError;
 
-            alert('訂單已成功送出！');
+            const displayId = 'ORD' + orderId.toString().padStart(3, '0');
+            alert(`訂單已成功送出！\n\n您的取餐與付款編號為：${displayId}\n請記下此編號並向老闆核對。`);
+            
             cart = [];
             updateCart();
             cartModal.classList.remove('visible');

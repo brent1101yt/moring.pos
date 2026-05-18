@@ -127,6 +127,23 @@
 .order-items {
     flex: 1;
     list-style: none;
+    max-height: 200px; /* 限制明細高度，避免卡片被拉得太長 */
+    overflow-y: auto;  /* 超過高度時顯示滾動條 */
+    padding-right: 5px;
+}
+
+/* 美化滾動條 */
+.order-items::-webkit-scrollbar {
+    width: 5px;
+}
+
+.order-items::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+}
+
+.order-items::-webkit-scrollbar-track {
+    background: #f7fafc;
 }
 
 .order-items li {
