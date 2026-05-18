@@ -10,6 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const pendingCount = document.getElementById('pending-count');
     const completedCount = document.getElementById('completed-count');
     const notificationSound = document.getElementById('notification-sound');
+    
+    const daySalesEl = document.getElementById('day-sales');
+    const monthSalesEl = document.getElementById('month-sales');
+    const yearSalesEl = document.getElementById('year-sales');
 
     // 1. 讀取所有訂單（含明細）
     async function fetchOrders() {
@@ -41,10 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 time: new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 items: o.order_items,
                 total: o.total_amount,
-                status: o.status
+                status: o.status,
+                created_at: o.created_at // 保留原始時間用於計算營業額
             }));
 
             renderOrders();
+            calculateSales();
 
         } catch (error) {
             console.error('讀取訂單失敗:', error);
@@ -115,7 +121,44 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3. 更新訂單狀態為已完成
+    // 3. 計算營業額
+    function calculateSales() {
+        const now = new Date();
+        const todayStr = now.toDateString();
+        const thisMonth = now.getMonth();
+        const thisYear = now.getFullYear();
+
+        let daySales = 0;
+        let monthSales = 0;
+        let yearSales = 0;
+
+        orders.forEach(o => {
+            if (o.status !== 'completed') return; // 只計算已完成/已結帳的訂單
+            
+            const orderDate = new Date(o.created_at);
+            
+            // 判斷今日
+            if (orderDate.toDateString() === todayStr) {
+                daySales += o.total;
+            }
+            
+            // 判斷本月
+            if (orderDate.getMonth() === thisMonth && orderDate.getFullYear() === thisYear) {
+                monthSales += o.total;
+            }
+            
+            // 判斷今年
+            if (orderDate.getFullYear() === thisYear) {
+                yearSales += o.total;
+            }
+        });
+
+        daySalesEl.textContent = `$${daySales}`;
+        monthSalesEl.textContent = `$${monthSales}`;
+        yearSalesEl.textContent = `$${yearSales}`;
+    }
+
+    // 4. 更新訂單狀態為已完成
     async function completeOrder(id) {
         try {
             const { error } = await supabase
@@ -125,14 +168,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (error) throw error;
             
-            // 重新讀取（Realtime 會處理，但手動觸發也行）
             fetchOrders();
         } catch (error) {
             console.error('更新訂單失敗:', error);
         }
     }
 
-    // 4. 刪除訂單
+    // 5. 刪除訂單
     async function deleteOrder(id) {
         if (confirm('確定要刪除這筆訂單嗎？（會連同明細一起刪除）')) {
             try {
@@ -150,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 5. 設定 Realtime 即時監聽
+    // 6. 設定 Realtime 即時監聽
     const subscription = supabase
         .channel('schema-db-changes')
         .on(
@@ -176,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
         )
         .subscribe();
 
-    // 模擬按鈕依然保留，但現在它會真的寫入資料庫！
+    // 模擬按鈕
     window.simulateNewOrder = async function() {
         const orderData = {
             order_type: Math.random() > 0.5 ? 'dine-in' : 'take-out',

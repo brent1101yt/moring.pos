@@ -23,6 +23,16 @@
     gap: 30px;
 }
 
+.sales-bar {
+    background: var(--light);
+    padding: 20px 30px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
 .stat-item {
     display: flex;
     flex-direction: column;
