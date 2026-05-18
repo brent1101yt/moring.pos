@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>華興店 掃碼點餐系統</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 內用外帶選擇遮罩 -->
+    <div id="order-type-modal" class="modal visible">
+        <div class="modal-content">
+            <h2>歡迎光臨！</h2>
+            <p>請選擇您的用餐方式</p>
+            <div class="options">
+                <button id="btn-dine-in" class="primary-btn">內用</button>
+                <button id="btn-take-out" class="secondary-btn">外帶</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 桌號選擇遮罩 -->
+    <div id="table-modal" class="modal">
+        <div class="modal-content">
+            <h2>請選擇您的桌號</h2>
+            <div class="table-grid" id="table-grid">
+                <!-- 動態生成 1-10 號桌按鈕 -->
+            </div>
+            <div class="modal-actions">
+                <button id="btn-cancel-table" class="secondary-btn">返回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主介面 -->
+    <div class="container">
+        <!-- 頂部 -->
+        <header>
+            <div class="logo">華興店 點餐</div>
+            <div id="table-display" class="table-info">未選擇</div>
+        </header>
+
+        <!-- 類別滑動選單 -->
+        <nav class="categories-nav">
+            <ul id="categories-list">
+                <!-- 動態生成或靜態寫死，先寫幾個示範 -->
+                <li class="active" data-category="combo">套餐類</li>
+                <li data-category="burger">漢堡類</li>
+                <li data-category="sandwich">三明治</li>
+                <li data-category="eggroll">蛋餅類</li>
+                <li data-category="noodle">鐵板麵</li>
+                <li data-category="roll">墨西哥捲</li>
+                <li data-category="snack">點心類</li>
+                <li data-category="toast">烤吐司</li>
+                <li data-category="croissant">可頌類</li>
+                <li data-category="drink">冷熱飲</li>
+            </ul>
+        </nav>
+
+        <!-- 商品網格 -->
+        <main class="products-grid" id="products-grid">
+            <!-- 動態生成商品卡片 -->
+        </main>
+
+        <!-- 購物車列 -->
+        <div class="cart-bar" id="cart-bar">
+            <div class="cart-info">
+                <span id="cart-count">0</span> 項商品 | 總計 $<span id="cart-total">0</span>
+            </div>
+            <button id="btn-checkout" class="checkout-btn">查看購物車</button>
+        </div>
+    </div>
+
+    <!-- 商品客製化彈窗 -->
+    <div id="custom-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-item-name">商品名稱</h3>
+            <div id="modal-options" class="modal-options">
+                <!-- 動態生成客製化選項（如：加起司、冰度） -->
+            </div>
+            <div class="modal-actions">
+                <button id="btn-cancel-custom" class="secondary-btn">取消</button>
+                <button id="btn-confirm-custom" class="primary-btn">加入購物車</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 購物車彈窗 -->
+    <div id="cart-modal" class="modal">
+        <div class="modal-content" style="max-width: 420px;">
+            <h2>您的點餐明細</h2>
+            <div id="cart-items-list" class="cart-items-list">
+                <!-- 動態生成購物車品項 -->
+            </div>
+            <div class="cart-summary">
+                <span>總計: $<span id="modal-cart-total">0</span></span>
+            </div>
+            <div class="modal-actions">
+                <button id="btn-close-cart" class="secondary-btn">繼續點餐</button>
+                <button id="btn-send-order" class="primary-btn">送出訂單</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="menu_data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
